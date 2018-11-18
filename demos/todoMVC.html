@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>todoMVC</title>
+    <link rel="stylesheet" href="./css/todoMVC.css">
+  </head>
+  <body>
+    <section class="todoapp">
+      <header class="header">
+        <h1>备忘录</h1>
+
+        <!-- 顶部输入框 -->
+        <!-- 输入内容 点击回车 获取输入的内容 添加到页面上 -->
+        <!-- [
+          {
+            content:'你好',
+            completed:false 默认新境的是没有完成的
+          }
+          ] -->
+
+        <input
+         v-model.trim="setTodo"
+         @keyup.enter="insetTodo"
+          autofocus="autofocus"
+          autocomplete="off"
+          placeholder="你想干啥!"
+          class="new-todo"
+        />
+      </header>
+      <section class="main">
+          <!-- 因为有了Vue 点击的时候 绑定的数据并没有立刻改变 使用change事件进行替换 -->
+        <input type="checkbox" class="toggle-all" @change="setcheckAll" v-model="ischeckAll"/>
+        <ul class="todo-list">
+          <!-- 循环数据 class绑定 模板渲染 -->
+          <li v-cloak v-for="(item, index) in currentList"  class="todo" :class="{completed:item.completed,editing:item == editTodo}" @dblclick="enterEditing(item)">
+            <div class="view">
+              <!-- 侦听单选 -->
+              <input type="checkbox" class="toggle" v-model="item.completed" @change="eachChange" />
+              <label v-cloak>{{item.content}}</label> 
+              <!-- 绑定删除事件 -->
+              <button class="destroy" @click="delOne(index)"></button>
+            </div>
+            <!-- 编辑的文本框 -->
+            <input type="text" @blur="editTodo=undefined" @keyup.enter="editTodo=undefined" class="edit" v-model="item.content"/>
+          </li>
+          <!-- <h2>模版</h2>
+          <li class="todo completed">
+            <div class="view">
+              <input type="checkbox" class="toggle" /> <label>123</label>
+              <button class="destroy"></button>
+            </div>
+            <input type="text" class="edit" />
+          </li>
+          <li class="todo completed">
+            <div class="view">
+              <input type="checkbox" class="toggle" /> <label>12312</label>
+              <button class="destroy"></button>
+            </div>
+            <input type="text" class="edit" />
+          </li> -->
+        </ul>
+      </section>
+      <footer class="footer">
+        <span v-cloak v-show="unCompletedNum!=0" class="todo-count"><strong>{{unCompletedNum}}</strong> {{ unCompletedNum>1? "items":"item"}} left </span>
+        <ul class="filters">
+          <li><a href="#/all" :class="{selected:status=='All'}" @click="status='All'">All</a></li>
+          <li><a href="#/active" :class="{selected:status=='Active'}" @click="status='Active'">Active</a></li>
+          <li><a href="#/completed" :class="{selected:status=='Completed'}" @click="status='Completed'">Completed</a></li>
+        </ul>
+        <button @click="clearList" class="clear-completed">Clear completed</button>
+      </footer>
+    </section>
+    <footer class="info">
+      <p>双击进入编辑状态</p>
+      <p>感谢 <a href="http://evanyou.me">Evan You</a></p>
+      <p>感谢 <a href="http://todomvc.com">TodoMVC</a></p>
+      <!-- github 新建一个仓库 仓库的名字 必须是 自己的用户名.github.io
+            上传一个 静态页面 首页index.html
+        -->
+      <p> <a href="https://autumnfish.github.io/">关于我</a></p>
+    </footer>
+  </body>
+</html>
+<script src="lib/vue.js"></script>
+<script>
+  let app=new Vue({
+    // 选择器
+    el:".todoapp",
+    // 数据
+    data:{
+      // 输入的内容
+      setTodo:"",
+      // 待办事项数组
+      TodoList:[],
+      // 是否全选
+      ischeckAll:false,
+      // 定义字段 保存 当前选中的状态
+      status:"All",
+      editTodo:undefined
+    },
+    methods:{
+      // 插入待办的事项
+      insetTodo(){
+        if(this.setTodo==""){
+          alert('小主要输入内容哦');
+          return;
+        }
+        // 获取内容插入到数组中
+        this.TodoList.unshift({
+          // 内容
+          content:this.setTodo,
+          // 是否已完成
+          completed:false
+        })
+        this.setTodo="";
+      },
+      // 删除
+      delOne(index){
+        this.TodoList.splice(index,1);
+      },
+      // 全选
+      setcheckAll(){
+      // 遍历所有的 待办事项 让他们的状态跟 全选一致
+        this.TodoList.forEach(v=>{
+          v.completed=this.ischeckAll;
+        })
+      },
+      // 点击单选(方法二)
+      eachChange(){
+        // 选中的个数
+        let checkedNum=0;
+        this.TodoList.forEach(v=>{
+          if(v.completed == true){
+            checkedNum++;
+          }
+        })
+        this.ischeckAll=this.TodoList.length==checkedNum;
+         
+      },
+      // 删除已经完成的
+      clearList(){
+      if(window.confirm('小主真的要删除么')){
+        // 需要从后往前删除,必免删不干净
+        for(let i=this.TodoList.length-1;i>=0;i--){
+          if(this.TodoList[i].completed == true){
+            this.TodoList.splice(i,1);
+          }
+        }
+      }else{
+        alert('谢小主饶命!');
+      }
+        
+      },
+      // 双击编辑
+      enterEditing(item){
+          this.editTodo=item;
+      }
+     
+    },
+    // 计算属性
+    computed:{
+      //计算未完成的待办事项
+      unCompletedNum(){
+        let CompletedCount=0;
+        // 遍历 求值
+        this.TodoList.forEach(v=>{
+          if(v.completed == false){
+            CompletedCount++;
+          }
+        })
+        return CompletedCount;
+      },
+      // 切换顶部显示的内容 使用计算属性来实现
+      // 根据选中状态生成不同的数据,让他来循环,返回不一样的数组即可
+      currentList(){
+         if(this.status=='All'){
+           return this.TodoList;
+         }else if(this.status=='Active'){
+           let temArr=[];
+           this.TodoList.forEach(v=>{
+             if(v.completed == false){
+               temArr.push(v);
+             }
+           })
+           return temArr;
+         }else{
+           let temArr=[];
+           this.TodoList.forEach(v=>{
+             if(v.completed == true){
+               temArr.push(v);
+             }
+           })
+           return temArr;
+         }
+      }
+    },
+    // 单选
+    // 侦听器(方法一)
+    // watch:{
+    //   // 监听TodoList的改变
+    //   TodoList: {
+    //     // 数据改变触发的方法
+    //   handler: function (val, oldVal) { 
+    //     // 获取选中的个数
+    //     let checkedNum=0;
+    //     this.TodoList.forEach(v=>{
+    //       if(v.completed == true){
+    //           checkedNum++;
+    //       }
+    //     })
+    //     this.ischeckAll=this.TodoList.length==checkedNum;
+    //    },
+    //   deep: true
+    // },
+    // },
+    // 生命周期函数的基本使用
+    // 下面这个很少使用因为访问不到Vue上面的任何内容
+      beforeCreate() {
+        // Vue 实例被创建时就会触发
+        // 但是 传递的参数 还没有应用上去
+        console.log(this.setTodo);//undefined;
+      },
+      // 下面这个一般用在初始化Vue数据时使用
+      created(){
+        // Vue实例创建好 并且 传递的属性 都设置到这个实例上了
+        // 读取缓存数据 进行转换 如果没有 使用空数组 如果有 使用读取的数据
+        this.TodoList=JSON.parse(window.localStorage.getItem('todo24'))||[];
+      }
+  })
+  // 待办事项数据常驻 localStorage(只要不清除缓存一起都在)
+  // sessionStroage(一次会话,关闭浏览器),如果要保证 缓存数据一直都存在,保存在服务器的数据库 客户端不可控
+  //  读取数据 :页面打开时读取数据
+  // 保存数据 : 每次修改数据 -> 性能消耗大 ; 关闭浏览器时保存 -> 性能消耗小
+
+  // 页面关闭时
+   window.onbeforeunload=function(){
+    //  保存数据
+     window.localStorage.setItem('todo24',JSON.stringify(app.TodoList));
+   }
+
+</script>
