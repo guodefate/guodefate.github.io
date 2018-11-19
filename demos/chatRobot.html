@@ -135,7 +135,7 @@
         <ul class="content">
             <!-- 已方 -->
           <li v-for="(item, index) in messageList">
-            <img :src="item.isBoy?'./img/hungryCat.gif':'./img/sleep.jpg'" 
+            <img v-cloak :src="item.isBoy?'./img/hungryCat.gif':'./img/sleep.jpg'" 
             :class="item.isBoy?'imgright':'imgleft'"
          alt="">
          <span v-cloak :class="item.isBoy?'spanright':'spanleft'"> 
@@ -179,7 +179,7 @@
         });
         // 调用接口
         $.ajax({
-            url:"http://www.tuling123.com/openapi/api",
+            url:"https://www.tuling123.com/openapi/api",
             type:"post",
             data:{
                 key:"8613e90772fc43db80c693ae9b90851a",
